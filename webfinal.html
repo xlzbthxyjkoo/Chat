@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Document</title>
+    <meta charset="utf-8">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <link rel = "stylesheet" href = "/css/webchat.css">
+
+    <script>
+        function submit_click() {
+            Swal.fire ({
+                title: '채팅을 종료하시겠습니까?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#0B7903',
+                confirmButtonText: 'close',
+                cancelButtonText: 'cancel',
+                showCancelButton: true,
+                showCloseButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.open('','_self').close();
+                }
+            });
+        }
+
+        function sendAjax(dataSource, body, func) {
+            var xhr = false;
+            if(window.ActiveXObject)
+                xhr = new ActiveXObject("Microsoft.XMLHTTP");
+            else if(window.XMLHttpRequest)
+                xhr = new XMLHttpRequest();
+            if(xhr) {
+                xhr.open("POST", dataSource);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.onreadystatechange = func;
+                xhr.send(body);
+
+            }
+
+        }
+
+        let currMsgCount = 0;
+        
+        function getNewMessages() {
+            let screen = document.querySelector("#screen");
+            let data = { "count" : currMsgCount};
+            sendAjax("/getNewMessages", JSON.stringify(data), function() {
+                if(this.readyState == 4 && this.status == 200) {
+                    let msgs = JSON.parse(this.responseText);
+                    for(let i = 0; i <msgs.length; i++) {
+                        screen.value += msgs[i].name + ": " + msgs[i].msg + "\n";
+
+                    }
+                    currMsgCount += msgs.length;
+                }
+            });
+        }
+
+        function sendMessage() {
+            let screen = document.querySelector("#screen");
+            let name = document.querySelector("#name");
+            let inputText = document.querySelector("#inputText");
+            screen.value += name.value + ": " + inputText.value + "\n";
+            let data = { "name": name.value, "msg" : inputText.value};
+
+            sendAjax("/sendMessage", JSON.stringify(data), function() {
+                if(this.readyState == 4 && this.status == 200) {
+                    currMsgCount = Number(this.responseText);
+            
+                }
+            });
+            inputText.value = "";
+        }
+
+        window.onload = function() {
+            setInterval(getNewMessages, 3000);
+        }
+    </script>
+</head>
+<body>
+
+    <button class="btn btn-primary mr-2" 
+    onclick="submit_click()">close
+    </button>
+
+    <div id = "main">
+        <textarea id = "screen" cols="40" rows="30"></textarea> <br/>
+        
+        <div id = "input1">
+            <input type = "text" id = "name"  placeholder="name"/>
+
+        </div>
+
+        <div id = "input2">
+            <input type = "text" id = "inputText" size = "36" placeholder = "chat"/> 
+        </div>
+        <div>
+            <button onclick="sendMessage()" id = "button1"> send</button>
+        </div>
+    
+    </div>
+    
+</body>
+</html>
